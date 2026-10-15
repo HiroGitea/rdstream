@@ -47,6 +47,23 @@ rdstream extract dataset.rds --path '*@meta.data*' --out meta/
 
 ## 安装
 
+### 预编译二进制
+
+从 [GitHub Releases](https://github.com/HiroGitea/rdstream/releases/latest)
+下载与操作系统及架构对应的压缩包。
+
+| 操作系统 | x86_64 | ARM64 |
+| :--- | :--- | :--- |
+| Linux | `x86_64-unknown-linux-gnu` | `aarch64-unknown-linux-gnu` |
+| macOS | `x86_64-apple-darwin` | `aarch64-apple-darwin` |
+| Windows | `x86_64-pc-windows-msvc` | `aarch64-pc-windows-msvc` |
+
+解压 `.tar.gz`（Linux/macOS）或 `.zip`（Windows）文件后，将 `rdstream` 或
+`rdstream.exe` 放入 `PATH` 中的目录。每个版本均附带 `SHA256SUMS` 文件用于校验下载内容。
+Linux 二进制要求 glibc 2.35 或更新版本；macOS 二进制以 macOS 11 或更新版本为目标。
+
+### Cargo
+
 使用 Rust 1.88 或更新版本从 crates.io 安装：
 
 ```sh

@@ -51,6 +51,24 @@ vectors, and decoder buffers.
 
 ## Installation
 
+### Precompiled binaries
+
+Download the archive for the operating system and architecture from
+[GitHub Releases](https://github.com/HiroGitea/rdstream/releases/latest).
+
+| Operating system | x86_64 | ARM64 |
+| :--- | :--- | :--- |
+| Linux | `x86_64-unknown-linux-gnu` | `aarch64-unknown-linux-gnu` |
+| macOS | `x86_64-apple-darwin` | `aarch64-apple-darwin` |
+| Windows | `x86_64-pc-windows-msvc` | `aarch64-pc-windows-msvc` |
+
+Extract the `.tar.gz` (Linux/macOS) or `.zip` (Windows) archive and place
+`rdstream` or `rdstream.exe` in a directory on `PATH`. Each release includes a
+`SHA256SUMS` file for download verification. Linux binaries require glibc 2.35
+or newer; macOS binaries target macOS 11 or newer.
+
+### Cargo
+
 Install from crates.io with Rust 1.88 or newer:
 
 ```sh

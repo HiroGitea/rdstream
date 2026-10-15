@@ -8,7 +8,7 @@
 # including zstd where R supports it),
 # and expected.json describing the objects as R sees them. With SeuratObject or
 # SingleCellExperiment installed it also writes single-cell objects and
-# expected_singlecell.json. tests/r_fixtures.rs and python/tests/test_r_fixtures.py
+# expected_singlecell.json. tests/r_generated.rs and python/tests/test_r_generated.py
 # read RDSTREAM_R_FIXTURES=<out-dir>.
 
 suppressPackageStartupMessages(library(jsonlite))
@@ -116,16 +116,25 @@ for (version in c(2, 3)) {
   close(con)
   record(file, "rds", "binary", version, "none")
 
-  for (ascii in list(FALSE, TRUE, NA)) {
-    enc <- if (isTRUE(ascii)) "ascii" else if (is.na(ascii)) "asciihex" else "xdr"
+  for (ascii in list(FALSE, TRUE)) {
+    enc <- if (isTRUE(ascii)) "ascii" else "xdr"
     file <- sprintf("all.v%d.%s.RData", version, enc)
     local({
       list2env(objects, environment())
       save(list = names(objects), file = file.path(out, file), version = version, ascii = ascii)
     })
     # save() compresses only binary output by default.
-    record(file, "rdata", if (enc == "asciihex") "ascii" else enc, version, if (enc == "xdr") "gzip" else "none")
+    record(file, "rdata", enc, version, if (enc == "xdr") "gzip" else "none")
   }
+
+  # serialize() supports hexadecimal ASCII on R versions that reject save(ascii = NA).
+  file <- sprintf("all.v%d.asciihex.RData", version)
+  con <- file(file.path(out, file), "wb")
+  writeBin(charToRaw(sprintf("RDA%d\n", version)), con)
+  serialize(as.pairlist(objects), con, ascii = NA, version = version)
+  close(con)
+  stopifnot(identical(sort(load(file.path(out, file), envir = new.env())), sort(names(objects))))
+  record(file, "rdata", "ascii", version, "none")
 }
 
 # zstd: R >= 4.5 built with zstd writes it through zstdfile() connections.

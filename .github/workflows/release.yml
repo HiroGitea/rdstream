@@ -1,0 +1,101 @@
+name: Release binaries
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag matching Cargo.toml
+        required: true
+        type: string
+      upload:
+        description: Upload to an existing GitHub Release after all builds pass
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_PROFILE_RELEASE_STRIP: symbols
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: macos-14
+            target: aarch64-apple-darwin
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            rustflags: -C target-feature=+crt-static
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            rustflags: -C target-feature=+crt-static
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags || '' }}
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check release version
+        shell: bash
+        run: python .github/scripts/package-release.py --check-version
+      - name: Test
+        run: cargo test --release --locked --target ${{ matrix.target }}
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }} --bin rdstream
+      - name: Package and verify executable
+        run: python .github/scripts/package-release.py --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rdstream-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  upload:
+    name: Upload release assets
+    if: github.event_name == 'push' || inputs.upload
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: rdstream-*
+          path: dist
+          merge-multiple: true
+      - name: Verify and upload archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cd dist
+          test "$(find . -maxdepth 1 -name '*.sha256' | wc -l)" -eq 6
+          cat *.sha256 | sort -k 2 > SHA256SUMS
+          sha256sum --check SHA256SUMS
+          gh release upload "$RELEASE_TAG" *.tar.gz *.zip SHA256SUMS --clobber

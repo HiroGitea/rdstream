@@ -49,6 +49,24 @@ rdstream extract dataset.rds --path '*@meta.data*' --out meta/
 
 ## インストール
 
+### ビルド済みバイナリ
+
+[GitHub Releases](https://github.com/HiroGitea/rdstream/releases/latest) から、
+OS とアーキテクチャに対応するアーカイブをダウンロードしてください。
+
+| OS | x86_64 | ARM64 |
+| :--- | :--- | :--- |
+| Linux | `x86_64-unknown-linux-gnu` | `aarch64-unknown-linux-gnu` |
+| macOS | `x86_64-apple-darwin` | `aarch64-apple-darwin` |
+| Windows | `x86_64-pc-windows-msvc` | `aarch64-pc-windows-msvc` |
+
+`.tar.gz`（Linux/macOS）または `.zip`（Windows）を展開し、`rdstream` または
+`rdstream.exe` を `PATH` に含まれるディレクトリに配置してください。
+各リリースにはダウンロード内容を検証するための `SHA256SUMS` が含まれます。
+Linux バイナリには glibc 2.35 以降が必要です。macOS バイナリは macOS 11 以降を対象とします。
+
+### Cargo
+
 Rust 1.88 以降を使用して crates.io からインストールします。
 
 ```sh
