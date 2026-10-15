@@ -59,6 +59,8 @@ objects <- list(
 
 num <- function(v) sprintf("%.17g", v) # "NA", "NaN", "Inf" and "-Inf" come out as such
 values <- function(x) {
+  # Record atomic values as a flat sequence; dimensions are described separately.
+  if (is.atomic(x)) attributes(x) <- NULL
   switch(typeof(x),
     integer = I(ifelse(is.na(x), "NA", sprintf("%d", x))),
     double = I(num(x)),
@@ -74,7 +76,7 @@ describe <- function(x) {
   if (typeof(x) == "symbol" && identical(as.character(x), "\001NULL\001")) x <- NULL
   d <- list(type = typeof(x))
   if (is.environment(x) || is.function(x) || is.symbol(x) || is.language(x)) return(d)
-  d$length <- length(x)
+  if (!isS4(x)) d$length <- length(x)
   v <- values(x)
   if (!is.null(v)) {
     if (length(x) <= 1000) d$values <- v else d$head <- if (is.list(v)) v[1:5] else I(v[1:5])

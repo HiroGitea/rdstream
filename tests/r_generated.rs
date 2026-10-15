@@ -83,7 +83,13 @@ impl Check<'_> {
                         (x, false) => x.to_string(),
                     })
                     .collect();
-                let want: Vec<&str> = expected.iter().map(|e| e.as_str().unwrap()).collect();
+                let want: Vec<&str> = expected
+                    .iter()
+                    .map(|e| {
+                        e.as_str()
+                            .unwrap_or_else(|| panic!("{file}: {at}: expected a string, got {e}"))
+                    })
+                    .collect();
                 assert_eq!(got, want, "{file}: {at}");
             }
             Value::Real(v) => {
