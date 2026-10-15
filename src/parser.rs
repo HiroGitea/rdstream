@@ -392,7 +392,7 @@ impl<'p, W: Wire, P: Policy + ?Sized> Items<'p, W, P> {
                 match self.decide(t, n)? {
                     Decision::Keep => {
                         let flat = self.read_vec(parts, W::reals)?;
-                        Value::Complex(flat.chunks_exact(2).map(|c| [c[0], c[1]]).collect())
+                        Value::Complex(flat.as_chunks::<2>().0.to_vec())
                     }
                     Decision::Skip => {
                         self.w.skip_reals(parts)?;
