@@ -522,7 +522,12 @@ fn check_recompressed(payload: Vec<u8>, outer_level: u32, outer: Decoder) {
         .unwrap();
         let decoders: Vec<_> = p.layers.iter().map(|l| l.decoder).collect();
         if threads > 1 && cfg!(feature = "parallel-gzip") {
-            assert_eq!(decoders, [outer, Decoder::ParallelWindow]);
+            let expected_outer = if cfg!(unix) {
+                outer
+            } else {
+                Decoder::ParallelFile
+            };
+            assert_eq!(decoders, [expected_outer, Decoder::ParallelWindow]);
         } else {
             assert_eq!(decoders, [Decoder::Serial, Decoder::Serial]);
         }
@@ -642,9 +647,14 @@ fn spooled_streams_decode_like_files() {
     )
     .unwrap();
     if cfg!(feature = "parallel-gzip") {
+        let outer = if cfg!(unix) {
+            Decoder::ParallelMapped
+        } else {
+            Decoder::ParallelFile
+        };
         assert_eq!(
             layers.iter().map(|l| l.decoder).collect::<Vec<_>>(),
-            [Decoder::ParallelMapped, Decoder::ParallelWindow]
+            [outer, Decoder::ParallelWindow]
         );
         assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1); // the spool file, while in use
     }
