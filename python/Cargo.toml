@@ -1,0 +1,17 @@
+[package]
+name = "rdstream-python"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+description = "Python bindings for rdstream"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+name = "_rdstream"
+crate-type = ["cdylib"]
+
+[dependencies]
+numpy = "0.29.0"
+pyo3 = { version = "0.29.3", features = ["abi3-py310"] }
+rdstream = { path = ".." }

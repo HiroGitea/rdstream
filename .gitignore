@@ -1,0 +1,24 @@
+# Build artifacts.
+target/
+build/
+dist/
+*.egg-info/
+
+# Python environments, caches, and extension modules.
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.so
+*.pyd
+
+# Local debugging output and temporary files.
+/debug/
+/scratch/
+/tmp/
+*.log
+*.tmp
+*.prof
+.coverage
+htmlcov/

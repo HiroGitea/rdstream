@@ -1,0 +1,31 @@
+[build-system]
+requires = ["maturin>=1.9,<2"]
+build-backend = "maturin"
+
+[project]
+name = "rdstream"
+version = "0.1.0"
+description = "Stream R .rds/.RData files into NumPy, pandas, SciPy and AnnData without an R runtime"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT OR Apache-2.0"
+keywords = ["r", "rds", "rdata", "seurat", "singlecellexperiment", "anndata"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+pandas = ["pandas>=2.0", "scipy>=1.10"]
+anndata = ["anndata>=0.10", "pandas>=2.0", "scipy>=1.10"]
+test = ["pytest>=8", "anndata>=0.10", "pandas>=2.0", "scipy>=1.10"]
+
+[tool.maturin]
+module-name = "rdstream._rdstream"
+python-source = "."
+python-packages = ["rdstream"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

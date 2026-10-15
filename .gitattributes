@@ -1,0 +1,4 @@
+# Preserve serialized fixtures byte for byte, including ASCII line endings.
+/tests/fixtures/**/*.rds binary
+/tests/fixtures/**/*.rda binary
+/tests/fixtures/**/*.RData binary

@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo test --locked
+      - run: cargo test --locked --no-default-features
+      - run: cargo clippy --locked --all-targets -- -D warnings
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "./python[test]"
+      - run: pytest python/tests
+
+  # Fixtures written by R itself: tests/r/generate.R saves objects in every
+  # serialization variant plus Seurat (v3/v5) and SingleCellExperiment objects,
+  # and records what R sees in them; the Rust and Python tests compare.
+  r-fixtures:
+    runs-on: ubuntu-latest
+    env:
+      RDSTREAM_R_FIXTURES: ${{ github.workspace }}/target/r-fixtures
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::jsonlite
+            any::SeuratObject
+            bioc::SingleCellExperiment
+      - run: Rscript tests/r/generate.R "$RDSTREAM_R_FIXTURES"
+      - run: cargo test --locked --test r_generated -- --nocapture
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "./python[test]"
+      - run: pytest python/tests/test_r_generated.py -v
