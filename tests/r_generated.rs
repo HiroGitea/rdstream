@@ -45,8 +45,6 @@ fn r_type(o: &RObject) -> &'static str {
 
 struct Check<'a> {
     file: &'a str,
-    /// ASCII files hold doubles to 16 significant digits only.
-    ascii: bool,
 }
 
 impl Check<'_> {
@@ -59,11 +57,7 @@ impl Check<'_> {
                 let v: f64 = e
                     .parse()
                     .unwrap_or_else(|_| panic!("{at}: bad expected double {e}"));
-                if self.ascii && v.is_finite() && v != 0.0 {
-                    ((x - v) / v).abs() < 1e-15
-                } else {
-                    x.to_bits() == v.to_bits()
-                }
+                x.to_bits() == v.to_bits()
             }
         };
         assert!(ok, "{}: {at}: expected {e}, got {x:?}", self.file);
@@ -173,11 +167,17 @@ fn files_written_by_r() {
     };
     let expected: Json =
         serde_json::from_str(&std::fs::read_to_string(dir.join("expected.json")).unwrap()).unwrap();
-    let objects = expected["objects"].as_object().unwrap();
     let files = expected["files"].as_array().unwrap();
     assert!(files.len() >= 20, "{}", files.len());
     for f in files {
         let file = f["file"].as_str().unwrap();
+        let objects = expected[if f["encoding"] == "ascii" {
+            "ascii_objects"
+        } else {
+            "objects"
+        }]
+        .as_object()
+        .unwrap();
         let opts = DecodeOptions {
             threads: 2,
             ..Default::default()
@@ -195,7 +195,7 @@ fn files_written_by_r() {
             "{file}"
         );
         let encoding = match f["encoding"].as_str().unwrap() {
-            "ascii" => Encoding::Ascii,
+            "ascii" | "asciihex" => Encoding::Ascii,
             "binary" => Encoding::Binary,
             _ => Encoding::Xdr,
         };
@@ -207,10 +207,7 @@ fn files_written_by_r() {
             _ => 1,
         };
         assert_eq!(p.layers.len(), layers, "{file}");
-        let check = Check {
-            file,
-            ascii: encoding == Encoding::Ascii,
-        };
+        let check = Check { file };
         let found: BTreeMap<&str, &RObject> = match d.format {
             Format::RData => d.objects().into_iter().collect(),
             Format::Rds => {

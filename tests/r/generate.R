@@ -136,7 +136,7 @@ for (version in c(2, 3)) {
   serialize(as.pairlist(objects), con, ascii = NA, version = version)
   close(con)
   stopifnot(identical(sort(load(file.path(out, file), envir = new.env())), sort(names(objects))))
-  record(file, "rdata", "ascii", version, "none")
+  record(file, "rdata", "asciihex", version, "none")
 }
 
 # zstd: R >= 4.5 built with zstd writes it through zstdfile() connections.
@@ -175,7 +175,11 @@ close(con)
 unlink(file.path(out, "tmp.RData"))
 record(file, "rdata", "xdr", 3, "gzip+gzip")
 
-expected <- list(objects = lapply(objects, describe), files = files)
+# Decimal ASCII uses fewer significant digits and can round the largest double
+# to infinity. Compare against R's own read-back of that representation.
+ascii_objects <- readRDS(file.path(out, "all.v2.ascii.none.rds"))
+expected <- list(objects = lapply(objects, describe),
+                 ascii_objects = lapply(ascii_objects, describe), files = files)
 write_json(expected, file.path(out, "expected.json"), auto_unbox = TRUE, null = "null", na = "null", digits = NA,
            pretty = TRUE)
 
